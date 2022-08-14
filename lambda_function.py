@@ -12,24 +12,12 @@ model_name = 'mobilenet_v2'
 model_path = '/var/task/lambda-container-example/model/' + model_name
 model = load_model(model_path, compile=True)
 
-s3 = boto3.resource('s3')
-s3_client = boto3.client('s3')
-
-
-def read_image_from_s3(filename):
-    bucket = s3.Bucket(bucket_name)
-    object = bucket.Object(filename)
-    response = object.get()
-    file_stream = response['Body']
-    img = Image.open(file_stream)
-    img.convert('RGB')
-    return img
-
 
 def filenames_to_input(file_list):
     imgs = []
     for file in file_list:
-        img = read_image_from_s3(file)
+        img = Image.open(file)
+        img.convert('RGB')
         img = img.resize((224, 224), Image.ANTIALIAS)
         img = np.array(img)
         # if image is grayscale, convert to 3 channels
@@ -56,7 +44,7 @@ def inference_model(batch_imgs):
 
 
 def lambda_handler(event, context):
-    file_list = '/var/task/lambda-container-example/test.jpeg'
+    file_list = ['/var/task/lambda-container-example/test.jpeg']
     batch_size = 1
     batch_imgs = filenames_to_input(file_list)
 

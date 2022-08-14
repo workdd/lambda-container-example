@@ -56,7 +56,7 @@ def inference_model(batch_imgs):
 
 
 def lambda_handler(event, context):
-    file_list = '/var/task/lambda-container-example/test.png'
+    file_list = '/var/task/lambda-container-example/test.jpeg'
     batch_size = 1
     batch_imgs = filenames_to_input(file_list)
 

@@ -9,36 +9,11 @@ import time
 bucket_name = 'imagenet-sample'
 bucket_ensemble = 'lambda-ensemble'
 model_name = 'mobilenet_v2'
-model_path = '/var/task/lambda-ensemble/model/' + model_name
+model_path = '/var/task/lambda-container-example/model/' + model_name
 model = load_model(model_path, compile=True)
 
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
-
-table_name = 'lambda-ensemble1'
-region_name = 'us-west-2'
-dynamodb = boto3.resource('dynamodb', region_name=region_name)
-table = dynamodb.Table(table_name)
-
-
-def upload_s3(case_num, acc):
-    item_dict = dict([(str(i), str(acc[i])) for i in range(len(acc))])
-    s3_client.put_object(
-        Body=json.dumps(item_dict),
-        Bucket=bucket_ensemble,
-        Key=model_name + '_' + case_num + '.txt'
-    )
-    return True
-
-
-def upload_dynamodb(case_num, acc):
-    item_dict = dict([(str(i), str(acc[i])) for i in range(len(acc))])
-    item_dict['model_name'] = model_name
-    item_dict['case_num'] = case_num
-
-    with table.batch_writer() as batch:
-        batch.put_item(Item=item_dict)
-    return True
 
 
 def read_image_from_s3(filename):
@@ -81,20 +56,16 @@ def inference_model(batch_imgs):
 
 
 def lambda_handler(event, context):
-    file_list = event['file_list']
-    batch_size = event['batch_size']
-    case_num = event['case_num']
+    file_list = '/var/task/lambda-container-example/test.png'
+    batch_size = 1
     batch_imgs = filenames_to_input(file_list)
 
     total_start = time.time()
     result, pred_time = inference_model(batch_imgs)
-    upload_s3(case_num, result)
     total_time = time.time() - total_start
 
     return {
         'model_name': model_name,
-        'case_num': case_num,
-        'batch_size': batch_size,
         'total_time': total_time,
         'pred_time': pred_time,
     }
